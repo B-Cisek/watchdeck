@@ -26,7 +26,7 @@ class ServiceGroup
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: UuidType::NAME, unique: true)]
-        private readonly Uuid $id,
+        private Uuid $id,
         #[ORM\Column(length: 100)]
         private string $name
     )

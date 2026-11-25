@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\CheckExecutor;
+use App\Entity\Check;
+use App\Entity\CheckResult;
+use App\Enum\CheckStatus;
+use App\Enum\CheckType;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
+final class CheckExecutorTest extends DatabaseTestCase
+{
+    public function testSuccessfulHttpCheckIsStored(): void
+    {
+        $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
+        $check = $this->persistCheck(['url' => 'https://shop.com/health']);
+
+        self::getContainer()->get(CheckExecutor::class)->execute($check);
+
+        $this->entityManager->clear();
+        $result = $this->onlyResultOf($check);
+        self::assertTrue($result->isSuccess());
+        self::assertNull($result->getError());
+        self::assertSame(['statusCode' => 200], $result->getDetails());
+
+        $reloaded = $this->entityManager->find(Check::class, $check->getId());
+        self::assertSame(CheckStatus::UP, $reloaded->getStatus());
+        self::assertNotNull($reloaded->getLastCheckedAt());
+        self::assertSame(['url' => 'https://shop.com/health'], $reloaded->getConfig());
+    }
+
+    public function testFailureIsStoredAndSecondOneMakesCheckDown(): void
+    {
+        $this->mockHttp(new MockHttpClient(static fn () => new MockResponse('', ['http_code' => 503])));
+        $check = $this->persistCheck(['url' => 'https://shop.com/health']);
+        $executor = self::getContainer()->get(CheckExecutor::class);
+
+        $result = $executor->execute($check);
+        self::assertFalse($result->isSuccess());
+        self::assertSame('Expected HTTP 200, got 503', $result->getError());
+        self::assertSame(CheckStatus::PENDING, $check->getStatus());
+
+        $executor->execute($check);
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->find(Check::class, $check->getId());
+        self::assertSame(CheckStatus::DOWN, $reloaded->getStatus());
+        self::assertSame(2, $this->entityManager->getRepository(CheckResult::class)->count(['check' => $reloaded]));
+    }
+
+    public function testEveryCheckTypeHasARunner(): void
+    {
+        $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
+        $executor = self::getContainer()->get(CheckExecutor::class);
+
+        $configs = [
+            CheckType::HTTP->value => ['url' => 'https://shop.com/health'],
+            CheckType::TCP->value => ['host' => '127.0.0.1', 'port' => 1],
+        ];
+
+        foreach (CheckType::cases() as $type) {
+            self::assertArrayHasKey($type->value, $configs, 'Add a sample config for the new check type.');
+
+            $check = $this->persistCheck($configs[$type->value], $type);
+            $executor->execute($check);
+
+            self::assertNotNull($check->getLastCheckedAt());
+        }
+    }
+
+    public function testDeletingCheckDeletesItsResults(): void
+    {
+        $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
+        $check = $this->persistCheck(['url' => 'https://shop.com/health']);
+        self::getContainer()->get(CheckExecutor::class)->execute($check);
+        $this->entityManager->clear();
+
+        $this->entityManager->remove($this->entityManager->find(Check::class, $check->getId()));
+        $this->entityManager->flush();
+
+        self::assertSame(0, $this->entityManager->getRepository(CheckResult::class)->count());
+    }
+
+    private function onlyResultOf(Check $check): CheckResult
+    {
+        $results = $this->entityManager->getRepository(CheckResult::class)->findBy(['check' => $check->getId()]);
+        self::assertCount(1, $results);
+
+        return $results[0];
+    }
+}

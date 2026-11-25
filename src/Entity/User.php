@@ -22,7 +22,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: UuidType::NAME, unique: true)]
-        private readonly Uuid $id,
+        private Uuid $id,
         #[ORM\Column(length: 180)]
         private string $email,
         #[ORM\Column]

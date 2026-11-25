@@ -1,0 +1,4 @@
+workers:
+    checks:
+        cmd: ['symfony', 'console', 'messenger:consume', 'scheduler_default', '--time-limit=3600']
+        watch: ['config', 'src']
