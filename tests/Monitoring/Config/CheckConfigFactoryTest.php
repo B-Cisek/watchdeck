@@ -71,6 +71,7 @@ final class CheckConfigFactoryTest extends KernelTestCase
         }
     }
 
+    /** @return iterable<string, array{CheckType, array<string, mixed>, string}> */
     public static function invalidValues(): iterable
     {
         yield 'empty url' => [CheckType::HTTP, ['url' => ''], 'url'];
@@ -104,6 +105,7 @@ final class CheckConfigFactoryTest extends KernelTestCase
         $this->factory->create($type, $data);
     }
 
+    /** @return iterable<string, array{CheckType, array<string, mixed>, class-string<\Throwable>}> */
     public static function malformedData(): iterable
     {
         yield 'missing url' => [CheckType::HTTP, [], MissingConstructorArgumentsException::class];

@@ -39,6 +39,7 @@ class Check
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $nextCheckAt;
 
+    /** @param array<string, mixed> $config */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: UuidType::NAME, unique: true)]

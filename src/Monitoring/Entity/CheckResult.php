@@ -17,6 +17,7 @@ class CheckResult
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: Types::BIGINT)]
     private ?int $id = null;
 
+    /** @param array<string, mixed> $details */
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]

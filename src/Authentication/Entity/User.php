@@ -19,6 +19,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     use TimestampTrait;
 
+    /** @param list<string> $roles */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: UuidType::NAME, unique: true)]
