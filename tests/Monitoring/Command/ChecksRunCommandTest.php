@@ -14,6 +14,11 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\Lock\LockFactory;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class ChecksRunCommandTest extends DatabaseTestCase
 {
     protected function setUp(): void
@@ -23,7 +28,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
         $this->mockHttp(new MockHttpClient(static fn () => new MockResponse('ok')));
     }
 
-    public function testDueCheckIsExecutedOnceUntilItsIntervalPasses(): void
+    public function test_due_check_is_executed_once_until_its_interval_passes(): void
     {
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);
 
@@ -34,7 +39,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
         self::assertSame(1, $this->resultCount());
     }
 
-    public function testDisabledCheckIsSkipped(): void
+    public function test_disabled_check_is_skipped(): void
     {
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);
         $this->update($check, 'enabled', false);
@@ -44,7 +49,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
         self::assertSame(0, $this->resultCount());
     }
 
-    public function testCheckScheduledInTheFutureIsSkipped(): void
+    public function test_check_scheduled_in_the_future_is_skipped(): void
     {
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);
         $this->update($check, 'nextCheckAt', new \DateTimeImmutable('+1 hour'));
@@ -54,7 +59,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
         self::assertSame(0, $this->resultCount());
     }
 
-    public function testBrokenConfigDoesNotStopOtherChecksAndIsNotAFailure(): void
+    public function test_broken_config_does_not_stop_other_checks_and_is_not_a_failure(): void
     {
         $broken = $this->persistCheck([], name: 'broken');
         $this->update($broken, 'nextCheckAt', new \DateTimeImmutable('-1 hour')); // runs first
@@ -68,7 +73,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
         self::assertSame(1, $this->resultCount());
     }
 
-    public function testNothingRunsWhileAnotherRunHoldsTheLock(): void
+    public function test_nothing_runs_while_another_run_holds_the_lock(): void
     {
         $this->persistCheck(['url' => 'https://shop.com/health']);
         $lock = self::getContainer()->get(LockFactory::class)->createLock('checks-run');
@@ -85,7 +90,7 @@ final class ChecksRunCommandTest extends DatabaseTestCase
 
     private function runDueChecks(): void
     {
-        $command = (new Application(self::$kernel))->find('app:checks:run');
+        $command = new Application(self::$kernel)->find('app:checks:run');
         $tester = new CommandTester($command);
         $tester->execute([]);
 
@@ -101,7 +106,8 @@ final class ChecksRunCommandTest extends DatabaseTestCase
             ->setParameter('value', $value, $this->entityManager->getClassMetadata(Check::class)->getTypeOfField($field))
             ->setParameter('id', $check->getId(), 'uuid')
             ->getQuery()
-            ->execute();
+            ->execute()
+        ;
 
         $this->entityManager->clear();
     }

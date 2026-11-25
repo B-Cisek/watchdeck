@@ -16,6 +16,5 @@ final readonly class CreateServiceRequest
         #[Assert\NotBlank(allowNull: true)]
         #[Assert\Uuid]
         public ?string $groupId = null,
-    ) {
-    }
+    ) {}
 }

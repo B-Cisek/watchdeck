@@ -29,8 +29,7 @@ class ServiceGroup
         private Uuid $id,
         #[ORM\Column(length: 100)]
         private string $name
-    )
-    {
+    ) {
         $this->createdAt = new \DateTimeImmutable();
         $this->services = new ArrayCollection();
     }

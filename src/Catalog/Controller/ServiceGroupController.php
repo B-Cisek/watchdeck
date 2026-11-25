@@ -30,7 +30,8 @@ final class ServiceGroupController extends AbstractController
 
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(
-        #[MapRequestPayload(acceptFormat: 'json')] CreateServiceGroupRequest $request,
+        #[MapRequestPayload(acceptFormat: 'json')]
+        CreateServiceGroupRequest $request,
         EntityManagerInterface $entityManager,
     ): JsonResponse {
         $group = new ServiceGroup(Uuid::v7(), $request->name);

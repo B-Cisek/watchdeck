@@ -31,10 +31,10 @@ final class CheckController extends AbstractController
     #[Route('/services/{id:service}/checks', name: 'create', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     public function create(
         Service $service,
-        #[MapRequestPayload(acceptFormat: 'json')] CreateCheckRequest $request,
+        #[MapRequestPayload(acceptFormat: 'json')]
+        CreateCheckRequest $request,
         CheckCreator $creator,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         return $this->json(CheckResponse::fromEntity($creator->create($service, $request)), Response::HTTP_CREATED);
     }
 }

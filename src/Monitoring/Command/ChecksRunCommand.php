@@ -21,9 +21,7 @@ final readonly class ChecksRunCommand
         private LoggerInterface $logger,
         private CheckExecutor $executor,
         private CheckRepository $checks
-    )
-    {
-    }
+    ) {}
 
     public function __invoke(): int
     {

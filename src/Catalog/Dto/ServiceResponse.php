@@ -13,8 +13,7 @@ final readonly class ServiceResponse
         public Uuid $id,
         public string $name,
         public ?ServiceGroupResponse $group,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(Service $service): self
     {

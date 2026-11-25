@@ -25,8 +25,7 @@ class Service
         #[ORM\ManyToOne(inversedBy: 'services')]
         #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
         private ?ServiceGroup $group = null
-    )
-    {
+    ) {
         $this->createdAt = new \DateTimeImmutable();
     }
 

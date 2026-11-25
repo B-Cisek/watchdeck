@@ -23,7 +23,7 @@ final class AuthController extends AbstractController
         return $this->json([
             'id' => $user->getId()->toRfc4122(),
             'email' => $user->getEmail(),
-            'roles' => $user->getRoles()
+            'roles' => $user->getRoles(),
         ], Response::HTTP_OK);
     }
 

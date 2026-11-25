@@ -10,6 +10,11 @@ use App\Monitoring\Runner\TcpCheckRunner;
 use App\Tests\Monitoring\CheckFactory;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class TcpCheckRunnerTest extends KernelTestCase
 {
     private TcpCheckRunner $runner;
@@ -19,7 +24,7 @@ final class TcpCheckRunnerTest extends KernelTestCase
         $this->runner = new TcpCheckRunner(self::getContainer()->get(CheckConfigFactory::class));
     }
 
-    public function testOpenPortIsSuccess(): void
+    public function test_open_port_is_success(): void
     {
         [$server, $port] = $this->listen();
 
@@ -33,7 +38,7 @@ final class TcpCheckRunnerTest extends KernelTestCase
         self::assertGreaterThanOrEqual(0, $outcome->durationMs);
     }
 
-    public function testClosedPortIsFailure(): void
+    public function test_closed_port_is_failure(): void
     {
         [$server, $port] = $this->listen();
         fclose($server);

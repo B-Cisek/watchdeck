@@ -13,20 +13,25 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class CheckControllerTest extends ApiTestCase
 {
     private const string UNKNOWN_ID = '01935e5c-0000-7000-8000-000000000000';
 
     #[TestWith(['GET', '/api/checks'])]
     #[TestWith(['POST', '/api/services/'.self::UNKNOWN_ID.'/checks'])]
-    public function testRequiresAuthentication(string $method, string $url): void
+    public function test_requires_authentication(string $method, string $url): void
     {
         $this->client->jsonRequest($method, $url);
 
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testCreatesHttpCheckWithDefaults(): void
+    public function test_creates_http_check_with_defaults(): void
     {
         $this->logIn();
         $service = $this->service();
@@ -55,7 +60,7 @@ final class CheckControllerTest extends ApiTestCase
         self::assertTrue($check->getService()->getId()->equals($service->getId()));
     }
 
-    public function testCreatesTcpCheckWithCustomTiming(): void
+    public function test_creates_tcp_check_with_custom_timing(): void
     {
         $this->logIn();
 
@@ -75,7 +80,7 @@ final class CheckControllerTest extends ApiTestCase
         self::assertSame(10, $payload['timeoutSeconds']);
     }
 
-    public function testNewCheckIsDueRightAway(): void
+    public function test_new_check_is_due_right_away(): void
     {
         $this->logIn();
 
@@ -86,11 +91,11 @@ final class CheckControllerTest extends ApiTestCase
 
     #[TestWith([self::UNKNOWN_ID])]
     #[TestWith(['nope'])]
-    public function testUnknownServiceIsNotFound(string $id): void
+    public function test_unknown_service_is_not_found(string $id): void
     {
         $this->logIn();
 
-        $this->client->jsonRequest('POST', "/api/services/$id/checks", [
+        $this->client->jsonRequest('POST', "/api/services/{$id}/checks", [
             'name' => 'home',
             'type' => 'http',
             'config' => ['url' => 'https://shop.com'],
@@ -101,7 +106,7 @@ final class CheckControllerTest extends ApiTestCase
 
     /** @param array<string, mixed> $changes */
     #[DataProvider('invalidFields')]
-    public function testRejectsInvalidField(array $changes, string $propertyPath): void
+    public function test_rejects_invalid_field(array $changes, string $propertyPath): void
     {
         $this->logIn();
 
@@ -121,24 +126,36 @@ final class CheckControllerTest extends ApiTestCase
     public static function invalidFields(): iterable
     {
         yield 'whitespace name' => [['name' => '   '], 'name'];
+
         yield 'too long name' => [['name' => str_repeat('a', 101)], 'name'];
+
         yield 'unknown type' => [['type' => 'ping'], 'type'];
+
         yield 'interval below range' => [['intervalSeconds' => 9], 'intervalSeconds'];
+
         yield 'interval above range' => [['intervalSeconds' => 86401], 'intervalSeconds'];
+
         yield 'timeout below range' => [['timeoutSeconds' => 0], 'timeoutSeconds'];
+
         yield 'timeout above range' => [['timeoutSeconds' => 61], 'timeoutSeconds'];
+
         yield 'config not an object' => [['config' => 'https://shop.com'], 'config'];
+
         yield 'invalid config value' => [['config' => ['url' => 'shop']], 'config.url'];
+
         yield 'missing config value' => [['config' => []], 'config.url'];
+
         yield 'missing config value of tcp' => [['type' => 'tcp', 'config' => ['host' => 'shop-db']], 'config.port'];
+
         yield 'unknown config value' => [['config' => ['url' => 'https://shop.com', 'port' => 80]], 'config.port'];
+
         yield 'config value of wrong type' => [
             ['config' => ['url' => 'https://shop.com', 'expectedStatus' => '200']],
             'config.expectedStatus',
         ];
     }
 
-    public function testListsChecksByName(): void
+    public function test_lists_checks_by_name(): void
     {
         $this->logIn();
         $service = $this->service();

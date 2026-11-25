@@ -9,10 +9,15 @@ use App\Catalog\Entity\ServiceGroup;
 use App\Tests\Monitoring\DatabaseTestCase;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class ServiceGroupTest extends DatabaseTestCase
 {
     /** Doctrine cannot initialize a lazy entity whose id is a readonly object property. */
-    public function testGroupCanBeLazyLoadedThroughItsService(): void
+    public function test_group_can_be_lazy_loaded_through_its_service(): void
     {
         $group = new ServiceGroup(Uuid::v7(), 'production');
         $service = new Service(Uuid::v7(), 'shop', $group);

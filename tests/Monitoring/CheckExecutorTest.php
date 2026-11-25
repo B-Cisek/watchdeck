@@ -12,9 +12,14 @@ use App\Monitoring\Enum\CheckType;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class CheckExecutorTest extends DatabaseTestCase
 {
-    public function testSuccessfulHttpCheckIsStored(): void
+    public function test_successful_http_check_is_stored(): void
     {
         $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);
@@ -33,7 +38,7 @@ final class CheckExecutorTest extends DatabaseTestCase
         self::assertSame(['url' => 'https://shop.com/health'], $reloaded->getConfig());
     }
 
-    public function testFailureIsStoredAndSecondOneMakesCheckDown(): void
+    public function test_failure_is_stored_and_second_one_makes_check_down(): void
     {
         $this->mockHttp(new MockHttpClient(static fn () => new MockResponse('', ['http_code' => 503])));
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);
@@ -52,7 +57,7 @@ final class CheckExecutorTest extends DatabaseTestCase
         self::assertSame(2, $this->entityManager->getRepository(CheckResult::class)->count(['check' => $reloaded]));
     }
 
-    public function testEveryCheckTypeHasARunner(): void
+    public function test_every_check_type_has_a_runner(): void
     {
         $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
         $executor = self::getContainer()->get(CheckExecutor::class);
@@ -72,7 +77,7 @@ final class CheckExecutorTest extends DatabaseTestCase
         }
     }
 
-    public function testDeletingCheckDeletesItsResults(): void
+    public function test_deleting_check_deletes_its_results(): void
     {
         $this->mockHttp(new MockHttpClient(new MockResponse('ok')));
         $check = $this->persistCheck(['url' => 'https://shop.com/health']);

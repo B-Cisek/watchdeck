@@ -13,9 +13,14 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class HttpCheckRunnerTest extends KernelTestCase
 {
-    public function testExpectedStatusIsSuccess(): void
+    public function test_expected_status_is_success(): void
     {
         $outcome = $this->runCheck(
             new MockResponse('ok'),
@@ -28,7 +33,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertGreaterThanOrEqual(0, $outcome->durationMs);
     }
 
-    public function testUnexpectedStatusIsFailure(): void
+    public function test_unexpected_status_is_failure(): void
     {
         $outcome = $this->runCheck(
             new MockResponse('', ['http_code' => 502]),
@@ -40,7 +45,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertSame(['statusCode' => 502], $outcome->details);
     }
 
-    public function testErrorStatusCanBeTheExpectedOne(): void
+    public function test_error_status_can_be_the_expected_one(): void
     {
         $outcome = $this->runCheck(
             new MockResponse('', ['http_code' => 401]),
@@ -50,7 +55,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertTrue($outcome->success);
     }
 
-    public function testRedirectStatusIsFailure(): void
+    public function test_redirect_status_is_failure(): void
     {
         $outcome = $this->runCheck(
             new MockResponse('', [
@@ -64,7 +69,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertSame('Expected HTTP 200, got 302', $outcome->error);
     }
 
-    public function testTransportErrorIsFailureWithoutStatusCode(): void
+    public function test_transport_error_is_failure_without_status_code(): void
     {
         $outcome = $this->runCheck(
             new MockResponse('', ['error' => 'Could not resolve host: shop.com']),
@@ -76,7 +81,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertSame([], $outcome->details);
     }
 
-    public function testRequestUsesCheckConfiguration(): void
+    public function test_request_uses_check_configuration(): void
     {
         $response = new MockResponse('', ['http_code' => 200]);
 

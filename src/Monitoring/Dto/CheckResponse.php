@@ -22,8 +22,7 @@ final readonly class CheckResponse
         public int $timeoutSeconds,
         public CheckStatus $status,
         public ?\DateTimeImmutable $lastCheckedAt,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(Check $check): self
     {

@@ -11,9 +11,14 @@ use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\Container;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class HealthcheckControllerTest extends WebTestCase
 {
-    public function testIsPublicAndReportsOk(): void
+    public function test_is_public_and_reports_ok(): void
     {
         $client = self::createClient();
 
@@ -27,7 +32,7 @@ final class HealthcheckControllerTest extends WebTestCase
         );
     }
 
-    public function testReportsUnavailableDatabaseWithoutLeakingDetails(): void
+    public function test_reports_unavailable_database_without_leaking_details(): void
     {
         $connection = self::createStub(Connection::class);
         $connection->method('executeQuery')->willThrowException(

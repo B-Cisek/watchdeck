@@ -23,13 +23,14 @@ final readonly class CreateUserCommand
     public function __construct(
         private EntityManagerInterface $entityManager,
         private PasswordHasherFactoryInterface $passwordHasherFactory,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         SymfonyStyle $io,
-        #[Argument('User email'), Ask('Email')] string $email,
-        #[Argument('User password'), Ask('Password', hidden: true)] string $password,
+        #[Argument('User email'), Ask('Email')]
+        string $email,
+        #[Argument('User password'), Ask('Password', hidden: true)]
+        string $password,
     ): int {
         $hash = $this->passwordHasherFactory->getPasswordHasher(User::class)->hash($password);
 

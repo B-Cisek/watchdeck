@@ -11,6 +11,11 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactoryInterface;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class AuthControllerTest extends WebTestCase
 {
     private const string PASSWORD = 'correct-horse';
@@ -39,7 +44,7 @@ final class AuthControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testLoginReturnsUserWithRoles(): void
+    public function test_login_returns_user_with_roles(): void
     {
         $user = $this->createUser();
 
@@ -53,7 +58,7 @@ final class AuthControllerTest extends WebTestCase
         ], $this->json());
     }
 
-    public function testRolesAreAlwaysAJsonList(): void
+    public function test_roles_are_always_a_json_list(): void
     {
         $this->createUser(['ROLE_USER', 'ROLE_USER', 'ROLE_ADMIN']);
 
@@ -62,7 +67,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame(['ROLE_USER', 'ROLE_ADMIN'], $this->json()['roles']);
     }
 
-    public function testMeReturnsSamePayloadAsLogin(): void
+    public function test_me_returns_same_payload_as_login(): void
     {
         $this->createUser();
         $this->login();
@@ -74,14 +79,14 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame($loginPayload, $this->json());
     }
 
-    public function testMeRequiresAuthentication(): void
+    public function test_me_requires_authentication(): void
     {
         $this->client->request('GET', '/api/me');
 
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testInvalidPasswordReturns401WithError(): void
+    public function test_invalid_password_returns401_with_error(): void
     {
         $this->createUser();
 
@@ -91,7 +96,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame('Invalid credentials.', $this->json()['error']);
     }
 
-    public function testRememberMeRestoresSession(): void
+    public function test_remember_me_restores_session(): void
     {
         $this->createUser();
         $this->login(['_remember_me' => true]);
@@ -104,7 +109,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame($this->email, $this->json()['email']);
     }
 
-    public function testRememberMeCookieIsHardened(): void
+    public function test_remember_me_cookie_is_hardened(): void
     {
         $this->createUser();
 
@@ -119,7 +124,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertSame('lax', $cookie->getSameSite());
     }
 
-    public function testSessionIsNotRestoredWhenRememberMeIsMissing(): void
+    public function test_session_is_not_restored_when_remember_me_is_missing(): void
     {
         $this->createUser();
 
@@ -131,7 +136,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testSessionIsNotRestoredWhenRememberMeIsFalse(): void
+    public function test_session_is_not_restored_when_remember_me_is_false(): void
     {
         $this->createUser();
 
@@ -143,7 +148,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testLogoutClearsSessionAndRememberMe(): void
+    public function test_logout_clears_session_and_remember_me(): void
     {
         $this->createUser();
         $this->login(['_remember_me' => true]);
@@ -155,7 +160,7 @@ final class AuthControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testPasswordChangeInvalidatesRememberMe(): void
+    public function test_password_change_invalidates_remember_me(): void
     {
         $user = $this->createUser();
         $this->login(['_remember_me' => true]);

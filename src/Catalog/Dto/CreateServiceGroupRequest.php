@@ -12,6 +12,5 @@ final readonly class CreateServiceGroupRequest
         #[Assert\NotBlank(normalizer: 'trim')]
         #[Assert\Length(max: 100)]
         public string $name,
-    ) {
-    }
+    ) {}
 }

@@ -12,8 +12,7 @@ final readonly class ServiceGroupResponse
     public function __construct(
         public Uuid $id,
         public string $name,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(ServiceGroup $group): self
     {

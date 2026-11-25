@@ -11,11 +11,16 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class ServiceControllerTest extends ApiTestCase
 {
     #[TestWith(['GET'])]
     #[TestWith(['POST'])]
-    public function testRequiresAuthentication(string $method): void
+    public function test_requires_authentication(string $method): void
     {
         $this->client->jsonRequest($method, '/api/services', ['name' => 'shop']);
 
@@ -25,7 +30,7 @@ final class ServiceControllerTest extends ApiTestCase
     /** @param array<string, mixed> $body */
     #[TestWith([['name' => 'shop']])]
     #[TestWith([['name' => 'shop', 'groupId' => null]])]
-    public function testCreatesServiceWithoutGroup(array $body): void
+    public function test_creates_service_without_group(array $body): void
     {
         $this->logIn();
 
@@ -43,7 +48,7 @@ final class ServiceControllerTest extends ApiTestCase
         self::assertNull($service->getGroup());
     }
 
-    public function testCreatesServiceInGroup(): void
+    public function test_creates_service_in_group(): void
     {
         $this->logIn();
         $group = new ServiceGroup(Uuid::v7(), 'production');
@@ -63,7 +68,7 @@ final class ServiceControllerTest extends ApiTestCase
 
     /** @param array<string, mixed> $body */
     #[DataProvider('invalidBodies')]
-    public function testRejectsInvalidBody(array $body, string $propertyPath): void
+    public function test_rejects_invalid_body(array $body, string $propertyPath): void
     {
         $this->logIn();
 
@@ -78,9 +83,13 @@ final class ServiceControllerTest extends ApiTestCase
     public static function invalidBodies(): iterable
     {
         yield 'missing name' => [[], 'name'];
+
         yield 'whitespace name' => [['name' => '   '], 'name'];
+
         yield 'too long name' => [['name' => str_repeat('a', 101)], 'name'];
+
         yield 'malformed group id' => [['name' => 'shop', 'groupId' => 'nope'], 'groupId'];
+
         yield 'unknown group' => [['name' => 'shop', 'groupId' => '01935e5c-0000-7000-8000-000000000000'], 'groupId'];
     }
 
@@ -88,7 +97,7 @@ final class ServiceControllerTest extends ApiTestCase
     #[TestWith(['', 'This value should not be blank.'])]
     #[TestWith([1, 'This value should be of type null|string.'])]
     #[TestWith(['01935e5c-0000-7000-8000-000000000000', 'Service group not found.'])]
-    public function testExplainsWhyGroupIdIsInvalid(mixed $groupId, string $message): void
+    public function test_explains_why_group_id_is_invalid(mixed $groupId, string $message): void
     {
         $this->logIn();
 
@@ -101,7 +110,7 @@ final class ServiceControllerTest extends ApiTestCase
         );
     }
 
-    public function testListsServicesByNameWithTheirGroup(): void
+    public function test_lists_services_by_name_with_their_group(): void
     {
         $this->logIn();
         $group = new ServiceGroup(Uuid::v7(), 'production');

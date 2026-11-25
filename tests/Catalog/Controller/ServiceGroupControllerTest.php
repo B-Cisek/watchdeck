@@ -10,18 +10,23 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class ServiceGroupControllerTest extends ApiTestCase
 {
     #[TestWith(['GET'])]
     #[TestWith(['POST'])]
-    public function testRequiresAuthentication(string $method): void
+    public function test_requires_authentication(string $method): void
     {
         $this->client->jsonRequest($method, '/api/service-groups', ['name' => 'production']);
 
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testCreatesGroup(): void
+    public function test_creates_group(): void
     {
         $this->logIn();
 
@@ -39,7 +44,7 @@ final class ServiceGroupControllerTest extends ApiTestCase
 
     /** @param array<string, mixed> $body */
     #[DataProvider('invalidBodies')]
-    public function testRejectsInvalidBody(array $body): void
+    public function test_rejects_invalid_body(array $body): void
     {
         $this->logIn();
 
@@ -54,12 +59,15 @@ final class ServiceGroupControllerTest extends ApiTestCase
     public static function invalidBodies(): iterable
     {
         yield 'missing name' => [[]];
+
         yield 'whitespace name' => [['name' => '   ']];
+
         yield 'too long name' => [['name' => str_repeat('a', 101)]];
+
         yield 'name of wrong type' => [['name' => ['production']]];
     }
 
-    public function testRejectsFormData(): void
+    public function test_rejects_form_data(): void
     {
         $this->logIn();
 
@@ -68,7 +76,7 @@ final class ServiceGroupControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(415);
     }
 
-    public function testListsGroupsByName(): void
+    public function test_lists_groups_by_name(): void
     {
         $this->logIn();
         $staging = new ServiceGroup(Uuid::v7(), 'staging');
@@ -84,7 +92,7 @@ final class ServiceGroupControllerTest extends ApiTestCase
         ], $this->json());
     }
 
-    public function testListIsEmptyWithoutGroups(): void
+    public function test_list_is_empty_without_groups(): void
     {
         $this->logIn();
 

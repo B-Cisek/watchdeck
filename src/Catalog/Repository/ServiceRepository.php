@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Catalog\Repository;
 
 use App\Catalog\Entity\Service;
@@ -25,6 +27,7 @@ class ServiceRepository extends ServiceEntityRepository
             ->orderBy('s.name', 'ASC')
             ->addOrderBy('s.id', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 }

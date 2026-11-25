@@ -20,8 +20,7 @@ final readonly class ServiceCreator
     public function __construct(
         private ServiceGroupRepository $groups,
         private EntityManagerInterface $entityManager,
-    ) {
-    }
+    ) {}
 
     public function create(CreateServiceRequest $request): Service
     {

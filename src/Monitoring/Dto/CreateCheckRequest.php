@@ -20,6 +20,5 @@ final readonly class CreateCheckRequest
         public int $intervalSeconds = 60,
         #[Assert\Range(min: 1, max: 60)]
         public int $timeoutSeconds = 5,
-    ) {
-    }
+    ) {}
 }

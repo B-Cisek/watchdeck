@@ -23,8 +23,7 @@ final readonly class CheckCreator
     public function __construct(
         private CheckConfigFactory $configFactory,
         private EntityManagerInterface $entityManager,
-    ) {
-    }
+    ) {}
 
     public function create(Service $service, CreateCheckRequest $request): Check
     {
@@ -76,7 +75,7 @@ final readonly class CheckCreator
     {
         $violations = new ConstraintViolationList();
         foreach ($messages as $field => $message) {
-            $violations->add(new ConstraintViolation($message, $message, [], $request, "config.$field", $request->config[$field] ?? null));
+            $violations->add(new ConstraintViolation($message, $message, [], $request, "config.{$field}", $request->config[$field] ?? null));
         }
 
         return new UnprocessableEntityHttpException('Invalid check config.', new ValidationFailedException($request, $violations));

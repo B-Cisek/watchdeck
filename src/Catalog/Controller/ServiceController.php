@@ -25,7 +25,8 @@ final class ServiceController extends AbstractController
 
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(
-        #[MapRequestPayload(acceptFormat: 'json')] CreateServiceRequest $request,
+        #[MapRequestPayload(acceptFormat: 'json')]
+        CreateServiceRequest $request,
         ServiceCreator $creator,
     ): JsonResponse {
         return $this->json(ServiceResponse::fromEntity($creator->create($request)), Response::HTTP_CREATED);

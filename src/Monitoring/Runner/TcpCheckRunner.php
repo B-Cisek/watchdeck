@@ -8,7 +8,6 @@ use App\Monitoring\Config\CheckConfigFactory;
 use App\Monitoring\Config\TcpCheckConfig;
 use App\Monitoring\Entity\Check;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsTaggedItem('tcp')]
 final readonly class TcpCheckRunner implements CheckRunnerInterface
