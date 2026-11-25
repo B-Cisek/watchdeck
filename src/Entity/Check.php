@@ -84,6 +84,11 @@ class Check
         return $this->id;
     }
 
+    public function getService(): Service
+    {
+        return $this->service;
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -98,6 +103,11 @@ class Check
     public function getConfig(): array
     {
         return $this->config;
+    }
+
+    public function getIntervalSeconds(): int
+    {
+        return $this->intervalSeconds;
     }
 
     public function getTimeoutSeconds(): int
