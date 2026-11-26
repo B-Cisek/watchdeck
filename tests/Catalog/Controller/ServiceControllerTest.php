@@ -6,6 +6,10 @@ namespace App\Tests\Catalog\Controller;
 
 use App\Catalog\Entity\Service;
 use App\Catalog\Entity\ServiceGroup;
+use App\Monitoring\Entity\Check;
+use App\Monitoring\Entity\CheckResult;
+use App\Monitoring\Enum\CheckType;
+use App\Monitoring\Runner\CheckOutcome;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -131,5 +135,101 @@ final class ServiceControllerTest extends ApiTestCase
                 'group' => ['id' => $group->getId()->toRfc4122(), 'name' => 'production'],
             ],
         ], $this->json());
+    }
+
+    public function test_delete_requires_authentication(): void
+    {
+        $this->client->request('DELETE', '/api/services/01935e5c-0000-7000-8000-000000000000');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function test_deletes_service_with_its_checks_and_results(): void
+    {
+        $this->logIn();
+        $group = new ServiceGroup(Uuid::v7(), 'production');
+        $shop = new Service(Uuid::v7(), 'shop', $group);
+        $blog = new Service(Uuid::v7(), 'blog');
+        $check = new Check(Uuid::v7(), $shop, 'homepage', CheckType::HTTP, ['url' => 'https://example.com']);
+        $result = CheckResult::fromOutcome($check, new CheckOutcome(true), new \DateTimeImmutable());
+        $this->persist($group, $shop, $blog, $check, $result);
+        $this->entityManager->clear();
+
+        $this->client->request('DELETE', '/api/services/'.$shop->getId()->toRfc4122());
+
+        self::assertResponseStatusCodeSame(204);
+        $this->entityManager->clear();
+        self::assertNull($this->entityManager->find(Service::class, $shop->getId()));
+        self::assertSame(0, $this->entityManager->getRepository(Check::class)->count());
+        self::assertSame(0, $this->entityManager->getRepository(CheckResult::class)->count());
+        // Only the service goes: its group and other services stay.
+        self::assertNotNull($this->entityManager->find(ServiceGroup::class, $group->getId()));
+        self::assertNotNull($this->entityManager->find(Service::class, $blog->getId()));
+    }
+
+    public function test_delete_of_unknown_service_is_not_found(): void
+    {
+        $this->logIn();
+
+        $this->client->request('DELETE', '/api/services/01935e5c-0000-7000-8000-000000000000');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function test_rename_requires_authentication(): void
+    {
+        $this->client->jsonRequest('PATCH', '/api/services/01935e5c-0000-7000-8000-000000000000', ['name' => 'store']);
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function test_renames_service_and_keeps_its_group(): void
+    {
+        $this->logIn();
+        $group = new ServiceGroup(Uuid::v7(), 'production');
+        $shop = new Service(Uuid::v7(), 'shop', $group);
+        $this->persist($group, $shop);
+        $shopId = $shop->getId()->toRfc4122();
+
+        $this->client->jsonRequest('PATCH', '/api/services/'.$shopId, ['name' => 'store']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([
+            'id' => $shopId,
+            'name' => 'store',
+            'group' => ['id' => $group->getId()->toRfc4122(), 'name' => 'production'],
+        ], $this->json());
+
+        $this->entityManager->clear();
+        $service = $this->entityManager->find(Service::class, $shop->getId());
+        self::assertSame('store', $service?->getName());
+        self::assertSame('production', $service->getGroup()?->getName());
+    }
+
+    /** @param array<string, mixed> $body */
+    #[TestWith([[]])]
+    #[TestWith([['name' => '   ']])]
+    #[TestWith([['name' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']])]
+    public function test_rejects_invalid_rename(array $body): void
+    {
+        $this->logIn();
+        $shop = new Service(Uuid::v7(), 'shop');
+        $this->persist($shop);
+
+        $this->client->jsonRequest('PATCH', '/api/services/'.$shop->getId()->toRfc4122(), $body);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('name', $this->json()['violations'][0]['propertyPath']);
+        $this->entityManager->clear();
+        self::assertSame('shop', $this->entityManager->find(Service::class, $shop->getId())?->getName());
+    }
+
+    public function test_rename_of_unknown_service_is_not_found(): void
+    {
+        $this->logIn();
+
+        $this->client->jsonRequest('PATCH', '/api/services/01935e5c-0000-7000-8000-000000000000', ['name' => 'store']);
+
+        self::assertResponseStatusCodeSame(404);
     }
 }

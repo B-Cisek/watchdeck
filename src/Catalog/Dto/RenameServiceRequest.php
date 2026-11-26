@@ -6,7 +6,7 @@ namespace App\Catalog\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class CreateServiceGroupRequest
+final readonly class RenameServiceRequest
 {
     public function __construct(
         #[Assert\NotBlank(normalizer: 'trim')]
