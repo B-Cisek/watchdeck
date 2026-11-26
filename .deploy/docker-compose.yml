@@ -1,0 +1,42 @@
+x-app: &app
+    image: ghcr.io/${GHCR_OWNER:?set GHCR_OWNER in .env}/watchdeck:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+
+services:
+    app:
+        <<: *app
+        container_name: watchdeck
+        networks: [traefik, db]
+        healthcheck:
+            test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+            interval: 30s
+            timeout: 5s
+            start_period: 20s
+            retries: 3
+        labels:
+            - traefik.enable=true
+            - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+            - traefik.http.routers.watchdeck.rule=Host(`${DOMAIN:?set DOMAIN in .env}`)
+            - traefik.http.routers.watchdeck.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+            - traefik.http.routers.watchdeck.tls=true
+            - traefik.http.routers.watchdeck.tls.certresolver=${TRAEFIK_CERTRESOLVER:-cf}
+            - traefik.http.middlewares.watchdeck-compress.compress=true
+            - traefik.http.routers.watchdeck.middlewares=watchdeck-compress
+            - traefik.http.services.watchdeck.loadbalancer.server.port=8080
+
+    worker:
+        <<: *app
+        container_name: watchdeck-worker
+        networks: [db]
+        command: ["php", "bin/console", "messenger:consume", "scheduler_default", "--time-limit=3600", "--memory-limit=128M"]
+        stop_signal: SIGTERM
+        stop_grace_period: 30s
+
+networks:
+    traefik:
+        name: ${TRAEFIK_NETWORK:-proxy}
+        external: true
+    db:
+        name: db
+        external: true

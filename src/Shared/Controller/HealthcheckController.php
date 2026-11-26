@@ -19,7 +19,7 @@ final class HealthcheckController extends AbstractController
         private readonly LoggerInterface $logger,
     ) {}
 
-    #[Route('/healthcheck', name: 'api_healthcheck')]
+    #[Route('/health', name: 'api_healthcheck')]
     public function __invoke(): JsonResponse
     {
         $databaseUp = $this->isDatabaseUp();

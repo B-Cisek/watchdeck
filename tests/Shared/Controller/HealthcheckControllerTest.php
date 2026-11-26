@@ -22,7 +22,7 @@ final class HealthcheckControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $client->request('GET', '/healthcheck');
+        $client->request('GET', '/health');
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));

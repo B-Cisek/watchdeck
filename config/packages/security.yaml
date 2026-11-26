@@ -44,7 +44,7 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
-        - { path: ^/healthcheck, roles: PUBLIC_ACCESS }
+        - { path: ^/health$, roles: PUBLIC_ACCESS }
         - { path: ^/api/(login|logout)$, roles: PUBLIC_ACCESS }
         - { path: ^/api/?$,    roles: PUBLIC_ACCESS }
         # TODO: replace with a token per log source; until then anyone can send logs.
