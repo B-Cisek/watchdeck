@@ -107,7 +107,7 @@ final class HttpCheckRunnerTest extends KernelTestCase
             ['User-Agent: '.HttpCheckRunner::USER_AGENT],
             $response->getRequestOptions()['normalized_headers']['user-agent'],
         );
-        self::assertStringStartsWith('Watchdeck-Monitor/', HttpCheckRunner::USER_AGENT);
+        self::assertStringStartsWith('WatchDeck-Monitor/', HttpCheckRunner::USER_AGENT);
     }
 
     private function runCheck(MockResponse $response, Check $check): CheckOutcome
