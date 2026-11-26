@@ -32,6 +32,10 @@ services:
         command: ["php", "bin/console", "messenger:consume", "scheduler_default", "--time-limit=3600", "--memory-limit=128M"]
         stop_signal: SIGTERM
         stop_grace_period: 30s
+        # The base image's HEALTHCHECK curls nginx, which does not run here. If the
+        # consumer (PID 1) dies the container exits and the restart policy brings it back.
+        healthcheck:
+            disable: true
 
 networks:
     traefik:
