@@ -97,6 +97,19 @@ final class HttpCheckRunnerTest extends KernelTestCase
         self::assertSame(0, $response->getRequestOptions()['max_redirects']);
     }
 
+    public function test_request_identifies_itself_as_watchdeck(): void
+    {
+        $response = new MockResponse('', ['http_code' => 200]);
+
+        $this->runCheck($response, CheckFactory::create(['url' => 'https://shop.com/health']));
+
+        self::assertSame(
+            ['User-Agent: '.HttpCheckRunner::USER_AGENT],
+            $response->getRequestOptions()['normalized_headers']['user-agent'],
+        );
+        self::assertStringStartsWith('Watchdeck-Monitor/', HttpCheckRunner::USER_AGENT);
+    }
+
     private function runCheck(MockResponse $response, Check $check): CheckOutcome
     {
         $runner = new HttpCheckRunner(

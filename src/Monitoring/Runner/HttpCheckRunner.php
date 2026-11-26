@@ -14,6 +14,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 #[AsTaggedItem('http')]
 final readonly class HttpCheckRunner implements CheckRunnerInterface
 {
+    /** Lets monitored apps tell checks apart in their access logs, and filter them out if they want to. */
+    public const string USER_AGENT = 'WatchDeck-Monitor/1.0';
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private CheckConfigFactory $configFactory,
@@ -30,6 +33,7 @@ final readonly class HttpCheckRunner implements CheckRunnerInterface
                 'timeout' => $check->getTimeoutSeconds(),      // limit bezczynności
                 'max_duration' => $check->getTimeoutSeconds(), // limit całości
                 'max_redirects' => 0,
+                'headers' => ['User-Agent' => self::USER_AGENT],
             ]);
             $statusCode = $response->getStatusCode();
             $response->cancel(); // body niepotrzebne
