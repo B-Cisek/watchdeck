@@ -217,7 +217,11 @@ final class LogSourceControllerTest extends ApiTestCase
             [['shop-app', 'stdout', 'second'], ['shop-worker', 'stderr', 'third'], ['shop-app', 'stdout', 'newest']],
             array_map(static fn (array $l) => [$l['container'], $l['stream'], $l['message']], $lines),
         );
-        self::assertSame(['id', 'container', 'loggedAt', 'stream', 'message'], array_keys($lines[0]));
+        self::assertSame(['id', 'sourceId', 'container', 'loggedAt', 'stream', 'message'], array_keys($lines[0]));
+        self::assertSame(
+            [$app->getId()->toRfc4122(), $worker->getId()->toRfc4122()],
+            [$lines[0]['sourceId'], $lines[1]['sourceId']],
+        );
         self::assertIsInt($lines[0]['id']);
         self::assertSame('2026-11-26T10:00:02+00:00', $lines[0]['loggedAt']);
     }

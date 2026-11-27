@@ -7,7 +7,7 @@ namespace App\Monitoring\Dto;
 use App\Monitoring\Enum\CheckType;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class CreateCheckRequest
+final readonly class CheckRequest
 {
     /** @param array<string, mixed> $config validated by CheckConfigFactory, as its fields depend on the type */
     public function __construct(
@@ -20,5 +20,7 @@ final readonly class CreateCheckRequest
         public int $intervalSeconds = 60,
         #[Assert\Range(min: 1, max: 60)]
         public int $timeoutSeconds = 5,
+        /** A paused check is kept but not run. */
+        public bool $enabled = true,
     ) {}
 }

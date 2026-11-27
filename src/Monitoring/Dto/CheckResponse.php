@@ -20,6 +20,7 @@ final readonly class CheckResponse
         public array $config,
         public int $intervalSeconds,
         public int $timeoutSeconds,
+        public bool $enabled,
         public CheckStatus $status,
         public ?\DateTimeImmutable $lastCheckedAt,
     ) {}
@@ -34,6 +35,7 @@ final readonly class CheckResponse
             $check->getConfig(),
             $check->getIntervalSeconds(),
             $check->getTimeoutSeconds(),
+            $check->isEnabled(),
             $check->getStatus(),
             $check->getLastCheckedAt(),
         );

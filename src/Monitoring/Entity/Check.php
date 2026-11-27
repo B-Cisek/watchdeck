@@ -62,6 +62,49 @@ class Check
         $this->nextCheckAt = $this->createdAt;
     }
 
+    /**
+     * A new target starts over as pending and is due right away: the old status
+     * was about something else. A new interval only moves the next run.
+     *
+     * @param array<string, mixed> $config
+     */
+    public function update(string $name, CheckType $type, array $config, int $intervalSeconds, int $timeoutSeconds): void
+    {
+        // Loose comparison: jsonb does not keep the key order.
+        $targetChanged = $type !== $this->type || $config != $this->config;
+        $intervalChanged = $intervalSeconds !== $this->intervalSeconds;
+
+        $this->name = $name;
+        $this->type = $type;
+        $this->config = $config;
+        $this->intervalSeconds = $intervalSeconds;
+        $this->timeoutSeconds = $timeoutSeconds;
+
+        if ($targetChanged) {
+            $this->status = CheckStatus::PENDING;
+            $this->consecutiveFailures = 0;
+            $this->lastCheckedAt = null;
+            $this->nextCheckAt = new \DateTimeImmutable();
+        } elseif ($intervalChanged && $this->lastCheckedAt !== null) {
+            $this->nextCheckAt = $this->lastCheckedAt->modify(sprintf('+%d seconds', $intervalSeconds));
+        }
+    }
+
+    /** A resumed check is due right away: its last result may be long out of date. */
+    public function setEnabled(bool $enabled): void
+    {
+        if ($enabled && !$this->enabled) {
+            $this->nextCheckAt = new \DateTimeImmutable();
+        }
+
+        $this->enabled = $enabled;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
     public function record(CheckOutcome $outcome, \DateTimeImmutable $checkedAt): void
     {
         $this->lastCheckedAt = $checkedAt;

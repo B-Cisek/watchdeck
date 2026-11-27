@@ -6,7 +6,7 @@ namespace App\Monitoring;
 
 use App\Catalog\Entity\Service;
 use App\Monitoring\Config\CheckConfigFactory;
-use App\Monitoring\Dto\CreateCheckRequest;
+use App\Monitoring\Dto\CheckRequest;
 use App\Monitoring\Entity\Check;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -18,14 +18,14 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 
-final readonly class CheckCreator
+final readonly class CheckWriter
 {
     public function __construct(
         private CheckConfigFactory $configFactory,
         private EntityManagerInterface $entityManager,
     ) {}
 
-    public function create(Service $service, CreateCheckRequest $request): Check
+    public function create(Service $service, CheckRequest $request): Check
     {
         $check = new Check(
             Uuid::v7(),
@@ -36,6 +36,7 @@ final readonly class CheckCreator
             $request->intervalSeconds,
             $request->timeoutSeconds,
         );
+        $check->setEnabled($request->enabled);
 
         $this->entityManager->persist($check);
         $this->entityManager->flush();
@@ -43,8 +44,25 @@ final readonly class CheckCreator
         return $check;
     }
 
+    /** The service stays: a check is moved by creating it again. */
+    public function update(Check $check, CheckRequest $request): Check
+    {
+        $check->update(
+            $request->name,
+            $request->type,
+            $this->config($request),
+            $request->intervalSeconds,
+            $request->timeoutSeconds,
+        );
+        $check->setEnabled($request->enabled);
+
+        $this->entityManager->flush();
+
+        return $check;
+    }
+
     /** @return array<string, mixed> with the defaults filled in */
-    private function config(CreateCheckRequest $request): array
+    private function config(CheckRequest $request): array
     {
         try {
             return get_object_vars($this->configFactory->create($request->type, $request->config));
@@ -71,7 +89,7 @@ final readonly class CheckCreator
      *
      * @param array<array-key, string> $messages by config field
      */
-    private function invalidConfig(CreateCheckRequest $request, array $messages): UnprocessableEntityHttpException
+    private function invalidConfig(CheckRequest $request, array $messages): UnprocessableEntityHttpException
     {
         $violations = new ConstraintViolationList();
         foreach ($messages as $field => $message) {
