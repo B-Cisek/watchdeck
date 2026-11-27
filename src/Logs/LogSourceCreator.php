@@ -7,6 +7,7 @@ namespace App\Logs;
 use App\Catalog\Entity\Service;
 use App\Logs\Dto\AddLogSourceRequest;
 use App\Logs\Entity\LogSource;
+use App\Logs\Security\IngestToken;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -16,14 +17,15 @@ final readonly class LogSourceCreator
         private EntityManagerInterface $entityManager,
     ) {}
 
-    public function create(Service $service, AddLogSourceRequest $request): LogSource
+    public function create(Service $service, AddLogSourceRequest $request): CreatedLogSource
     {
         $host = trim((string) $request->host);
-        $source = new LogSource(Uuid::v7(), $service, $request->containerName, $host === '' ? null : $host);
+        $token = IngestToken::generate();
+        $source = new LogSource(Uuid::v7(), $service, $request->containerName, $token->hash(), $host === '' ? null : $host);
 
         $this->entityManager->persist($source);
         $this->entityManager->flush();
 
-        return $source;
+        return new CreatedLogSource($source, $token);
     }
 }

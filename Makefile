@@ -1,4 +1,4 @@
-.PHONY: phpstan fix up down
+.PHONY: phpstan fix up down test
 
 .DEFAULT_GOAL := help
 
@@ -9,6 +9,7 @@ help:
 	@echo "  make cs-fix        - Fix code style with PHP-CS-Fixer"
 	@echo "  make up       		- Spin up database"
 	@echo "  make down       	- Down database"
+	@echo "  make test       	- Run tests"
 
 ## phpstan: Run PHPStan static analysis
 phpstan:
@@ -21,4 +22,7 @@ up:
 	podman compose up -d
 down:
 	podman compose down
+test:
+	vendor/bin/phpunit
+
 

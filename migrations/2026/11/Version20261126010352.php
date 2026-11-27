@@ -24,7 +24,8 @@ final class Version20261126010352 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_6F7F67CBCE732E13 ON "log_lines" (event_hash)');
         $this->addSql('CREATE INDEX IDX_6F7F67CB833E80EFA78D87A7 ON "log_lines" (log_source_id, logged_at)');
         $this->addSql('CREATE INDEX IDX_6F7F67CB833E80EF ON "log_lines" (log_source_id)');
-        $this->addSql('CREATE TABLE "log_sources" (last_log_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, id UUID NOT NULL, container_name VARCHAR(255) NOT NULL, host VARCHAR(100) DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, service_id UUID NOT NULL, PRIMARY KEY (id))');
+        $this->addSql('CREATE TABLE "log_sources" (last_log_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, id UUID NOT NULL, container_name VARCHAR(255) NOT NULL, ingest_token_hash VARCHAR(64) NOT NULL, host VARCHAR(100) DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, service_id UUID NOT NULL, PRIMARY KEY (id))');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_LOG_SOURCES_INGEST_TOKEN_HASH ON "log_sources" (ingest_token_hash)');
         $this->addSql('CREATE INDEX IDX_EA905D65ED5CA9E6 ON "log_sources" (service_id)');
         $this->addSql('ALTER TABLE "log_lines" ADD CONSTRAINT FK_6F7F67CB833E80EF FOREIGN KEY (log_source_id) REFERENCES "log_sources" (id) ON DELETE CASCADE NOT DEFERRABLE');
         $this->addSql('ALTER TABLE "log_sources" ADD CONSTRAINT FK_EA905D65ED5CA9E6 FOREIGN KEY (service_id) REFERENCES "services" (id) ON DELETE CASCADE NOT DEFERRABLE');

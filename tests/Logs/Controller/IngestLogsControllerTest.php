@@ -8,6 +8,7 @@ use App\Catalog\Entity\Service;
 use App\Logs\Entity\LogLine;
 use App\Logs\Entity\LogSource;
 use App\Logs\Enum\LogStream;
+use App\Logs\Security\IngestToken;
 use App\Tests\ApiTestCase;
 use Symfony\Component\Uid\Uuid;
 
@@ -24,17 +25,19 @@ final class IngestLogsControllerTest extends ApiTestCase
     private const string DOCKER_ID = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
 
     private LogSource $source;
+    private IngestToken $token;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $service = new Service(Uuid::v7(), 'shop');
-        $this->source = new LogSource(Uuid::v7(), $service, 'shop');
+        $this->token = IngestToken::generate();
+        $this->source = new LogSource(Uuid::v7(), $service, 'shop', $this->token->hash());
         $this->persist($service, $this->source);
     }
 
-    public function test_stores_lines_without_login(): void
+    public function test_stores_lines_sent_with_the_source_token(): void
     {
         $this->send(
             self::event('GET / 200', timestamp: '2026-11-26T10:00:00.123456789Z'),
@@ -119,7 +122,7 @@ final class IngestLogsControllerTest extends ApiTestCase
 
     public function test_accepts_a_json_array_too(): void
     {
-        $this->client->request('POST', $this->url(), server: ['CONTENT_TYPE' => 'application/json'], content: '['.self::event('one').','.self::event('two', timestamp: '2026-11-26T10:00:01Z').']');
+        $this->client->request('POST', '/api/ingest/logs', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$this->token->value], content: '['.self::event('one').','.self::event('two', timestamp: '2026-11-26T10:00:01Z').']');
 
         self::assertResponseIsSuccessful();
         self::assertCount(2, $this->lines());
@@ -141,11 +144,33 @@ final class IngestLogsControllerTest extends ApiTestCase
         self::assertCount(0, $this->lines());
     }
 
-    public function test_unknown_source_is_not_found(): void
+    public function test_rejects_batch_without_token(): void
     {
-        $this->client->request('POST', '/api/ingest/logs/01935e5c-0000-7000-8000-000000000000', content: self::event('lost'));
+        $this->client->request('POST', '/api/ingest/logs', server: ['CONTENT_TYPE' => 'application/x-ndjson'], content: self::event('anonymous'));
 
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseStatusCodeSame(401);
+        self::assertCount(0, $this->lines());
+    }
+
+    public function test_rejects_batch_with_unknown_token(): void
+    {
+        $this->sendWith(IngestToken::generate()->value, self::event('forged'));
+
+        self::assertResponseStatusCodeSame(401);
+        self::assertCount(0, $this->lines());
+    }
+
+    public function test_token_writes_to_its_own_source_only(): void
+    {
+        $other = new LogSource(Uuid::v7(), $this->source->getService(), 'shop-db', IngestToken::generate()->hash());
+        $this->persist($other);
+
+        // An event of shop-db sent with the token of shop is skipped, not stored under shop-db.
+        $this->send(self::event('mine'), self::event('not mine', container: 'shop-db'));
+
+        $lines = $this->lines();
+        self::assertSame(['mine'], array_map(static fn (LogLine $l) => $l->getMessage(), $lines));
+        self::assertSame($this->source->getId()->toRfc4122(), $lines[0]->getLogSource()->getId()->toRfc4122());
     }
 
     private static function event(
@@ -165,12 +190,15 @@ final class IngestLogsControllerTest extends ApiTestCase
 
     private function send(string ...$lines): void
     {
-        $this->client->request('POST', $this->url(), server: ['CONTENT_TYPE' => 'application/x-ndjson'], content: implode("\n", $lines));
+        $this->sendWith($this->token->value, ...$lines);
     }
 
-    private function url(): string
+    private function sendWith(string $token, string ...$lines): void
     {
-        return '/api/ingest/logs/'.$this->source->getId()->toRfc4122();
+        $this->client->request('POST', '/api/ingest/logs', server: [
+            'CONTENT_TYPE' => 'application/x-ndjson',
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+        ], content: implode("\n", $lines));
     }
 
     /** @return list<LogLine> */

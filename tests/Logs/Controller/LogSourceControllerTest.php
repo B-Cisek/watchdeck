@@ -8,6 +8,7 @@ use App\Catalog\Entity\Service;
 use App\Logs\Entity\LogLine;
 use App\Logs\Entity\LogSource;
 use App\Logs\Repository\LogLineRepository;
+use App\Logs\Security\IngestToken;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
@@ -72,8 +73,46 @@ final class LogSourceControllerTest extends ApiTestCase
         // Without it "shop" would also take the logs of "shop-db".
         self::assertSame('.container_name == "shop"', $config['transforms']["{$key}_exact"]['condition']);
         self::assertSame(["{$key}_exact"], $config['sinks'][$key]['inputs']);
-        self::assertSame("http://localhost/api/ingest/logs/{$sourceId}", $config['sinks'][$key]['uri']);
+        self::assertSame('http://localhost/api/ingest/logs', $config['sinks'][$key]['uri']);
+        self::assertSame('bearer', $config['sinks'][$key]['auth']['strategy']);
         self::assertSame('newline_delimited', $config['sinks'][$key]['framing']['method']);
+    }
+
+    public function test_token_in_the_vector_config_lets_vector_send_logs(): void
+    {
+        $this->logIn();
+        $service = new Service(Uuid::v7(), 'shop');
+        $this->persist($service);
+        $this->client->jsonRequest('POST', "/api/services/{$service->getId()->toRfc4122()}/log-sources", ['containerName' => 'shop']);
+        $sink = array_values(Yaml::parse($this->json()['vectorConfig']['content'])['sinks'])[0];
+
+        $this->client->request('POST', $sink['uri'], server: [
+            'CONTENT_TYPE' => 'application/x-ndjson',
+            'HTTP_AUTHORIZATION' => 'Bearer '.$sink['auth']['token'],
+        ], content: json_encode([
+            'container_id' => 'abc',
+            'container_name' => 'shop',
+            'message' => 'hello',
+            'stream' => 'stdout',
+            'timestamp' => '2026-11-26T10:00:00Z',
+        ], \JSON_THROW_ON_ERROR));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['received' => 1, 'stored' => 1], $this->json());
+    }
+
+    public function test_stores_only_the_hash_of_the_token(): void
+    {
+        $this->logIn();
+        $service = new Service(Uuid::v7(), 'shop');
+        $this->persist($service);
+        $this->client->jsonRequest('POST', "/api/services/{$service->getId()->toRfc4122()}/log-sources", ['containerName' => 'shop']);
+        $token = array_values(Yaml::parse($this->json()['vectorConfig']['content'])['sinks'])[0]['auth']['token'];
+
+        $stored = $this->entityManager->getConnection()->fetchOne('SELECT ingest_token_hash FROM log_sources');
+
+        self::assertSame(new IngestToken($token)->hash(), $stored);
+        self::assertNotSame($token, $stored);
     }
 
     public function test_blank_host_is_stored_as_null(): void
@@ -128,9 +167,9 @@ final class LogSourceControllerTest extends ApiTestCase
         $this->logIn();
         $shop = new Service(Uuid::v7(), 'shop');
         $blog = new Service(Uuid::v7(), 'blog');
-        $app = new LogSource(Uuid::v7(), $shop, 'shop-app', 'vps-1');
-        $worker = new LogSource(Uuid::v7(), $shop, 'shop-worker');
-        $this->persist($shop, $blog, $app, $worker, new LogSource(Uuid::v7(), $blog, 'blog'));
+        $app = new LogSource(Uuid::v7(), $shop, 'shop-app', self::tokenHash(), 'vps-1');
+        $worker = new LogSource(Uuid::v7(), $shop, 'shop-worker', self::tokenHash());
+        $this->persist($shop, $blog, $app, $worker, new LogSource(Uuid::v7(), $blog, 'blog', self::tokenHash()));
 
         $this->client->request('GET', "/api/services/{$shop->getId()->toRfc4122()}/log-sources");
 
@@ -158,9 +197,9 @@ final class LogSourceControllerTest extends ApiTestCase
         $this->logIn();
         $shop = new Service(Uuid::v7(), 'shop');
         $blog = new Service(Uuid::v7(), 'blog');
-        $app = new LogSource(Uuid::v7(), $shop, 'shop-app');
-        $worker = new LogSource(Uuid::v7(), $shop, 'shop-worker');
-        $other = new LogSource(Uuid::v7(), $blog, 'blog');
+        $app = new LogSource(Uuid::v7(), $shop, 'shop-app', self::tokenHash());
+        $worker = new LogSource(Uuid::v7(), $shop, 'shop-worker', self::tokenHash());
+        $other = new LogSource(Uuid::v7(), $blog, 'blog', self::tokenHash());
         $this->persist($shop, $blog, $app, $worker, $other);
         $this->insertLines(
             [$app, '10:00:01', 'stdout', 'oldest, cut by the limit'],
@@ -204,6 +243,11 @@ final class LogSourceControllerTest extends ApiTestCase
         $this->client->request('GET', '/api/services/01935e5c-0000-7000-8000-000000000000/logs');
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    private static function tokenHash(): string
+    {
+        return IngestToken::generate()->hash();
     }
 
     /** @param array{LogSource, string, string, string} ...$lines source, time on 2026-11-26, stream, message */

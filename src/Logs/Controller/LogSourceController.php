@@ -41,7 +41,7 @@ final class LogSourceController extends AbstractController
         return $this->json(array_map(LogLineResponse::fromEntity(...), $lines->findLatestOfService($service, $limit)));
     }
 
-    /** "Add logs" on a service: returns the Vector config file to put on the container's server. */
+    /** "Add logs" on a service: returns the Vector config file, with the source's token, to put on the container's server. */
     #[Route('/services/{id:service}/log-sources', name: 'create', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     public function create(
         Service $service,
@@ -50,10 +50,10 @@ final class LogSourceController extends AbstractController
         LogSourceCreator $creator,
         VectorConfigGenerator $vector,
     ): JsonResponse {
-        $source = $creator->create($service, $request);
+        $created = $creator->create($service, $request);
 
         return $this->json(
-            new AddedLogSourceResponse(LogSourceResponse::fromEntity($source), $vector->generate($source)),
+            new AddedLogSourceResponse(LogSourceResponse::fromEntity($created->source), $vector->generate($created->source, $created->token)),
             Response::HTTP_CREATED,
         );
     }

@@ -17,6 +17,7 @@ use Symfony\Component\Uid\Uuid;
  */
 #[ORM\Entity(repositoryClass: LogSourceRepository::class)]
 #[ORM\Table(name: '`log_sources`')]
+#[ORM\UniqueConstraint(name: 'UNIQ_LOG_SOURCES_INGEST_TOKEN_HASH', fields: ['ingestTokenHash'])]
 class LogSource
 {
     use TimestampTrait;
@@ -34,6 +35,9 @@ class LogSource
         private Service $service,
         #[ORM\Column(length: 255)]
         private string $containerName,
+        /** SHA-256 of the token Vector sends; see IngestToken. */
+        #[ORM\Column(length: 64)]
+        private string $ingestTokenHash,
         /** A label for people, e.g. "vps-1". Logs are matched by the source, not by host. */
         #[ORM\Column(length: 100, nullable: true)]
         private ?string $host = null,

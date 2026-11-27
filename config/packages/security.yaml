@@ -15,6 +15,11 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
             security: false
+        ingest:
+            pattern: ^/api/ingest/
+            stateless: true
+            access_token:
+                token_handler: App\Logs\Security\IngestTokenHandler
         main:
             lazy: true
             provider: app_user_provider
@@ -44,14 +49,11 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
-        - { path: ^/health$, roles: PUBLIC_ACCESS }
+        - { path: ^/health$,             roles: PUBLIC_ACCESS }
         - { path: ^/api/(login|logout)$, roles: PUBLIC_ACCESS }
-        - { path: ^/api/?$,    roles: PUBLIC_ACCESS }
-        # TODO: replace with a token per log source; until then anyone can send logs.
-        - { path: ^/api/ingest/, roles: PUBLIC_ACCESS }
-        - { path: ^/api/,      roles: IS_AUTHENTICATED_REMEMBERED }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/api/?$,              roles: PUBLIC_ACCESS }
+        - { path: ^/api/ingest/,         roles: ROLE_INGEST }
+        - { path: ^/api/,                roles: IS_AUTHENTICATED_REMEMBERED }
 
 when@test:
     security:
